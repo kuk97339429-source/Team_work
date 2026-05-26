@@ -117,11 +117,19 @@ int player_score = 0;
 int player_lv = 1;
 
 // ===== 터미널 정보 =====
+// csbi.srWindow.Left + 1; 터미널 에서 인덱스값이 0부터 시작하기에 값을 뺄려면 +1 필요
+//  CONSOLE_SCREEN_BUFFER_INFO csbi; 빈 화면( 터미널 ) 만들기
+// GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi); 화면 (터미널)을 가리키는 손잡이 가져오기
+// return csbi.srWindow.Right - csbi.srWindow.Left + 1; 화면의 가로 칸 수 계산
+// return은 가로줄 칸 수
+
 int get_terminal_width() {
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
     return csbi.srWindow.Right - csbi.srWindow.Left + 1;
 }
+
+// 위와 같은 방법으로 세로 칸 수 구하는 함수
 
 int get_terminal_height() {
     CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -139,6 +147,7 @@ void print_centered(const char* line, int term_w) {
     printf("%s\n", line);
 }
 
+// 위에 터미널 정보를 바탕으로 한국어를 중앙 정렬 하기위한 함수
 void print_centered_kr(const char* line, int term_w, int display_width) {
     int pad = (term_w - display_width) / 2;
     if (pad < 0) pad = 0;
