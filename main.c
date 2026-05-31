@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <windows.h>
 #include <conio.h>
 
@@ -112,24 +113,21 @@ void blink_print(const char* text, int term_w, int display_width) {
 }
 
 // ===== 플레이어 상태 =====
+// ===== 플레이어 상태 =====
+char player_name[50] = "학생";
+char player_id[20] = "00000000";
 int player_hp = 100;
 int player_score = 0;
 int player_lv = 1;
+int has_jokbo = 0;        // 족보 보유 여부 (0=없음, 1=있음)
+int jokbo_used = 0;       // 족보 사용 여부 (0=미사용, 1=사용함)
 
 // ===== 터미널 정보 =====
-// csbi.srWindow.Left + 1; 터미널 에서 인덱스값이 0부터 시작하기에 값을 뺄려면 +1 필요
-//  CONSOLE_SCREEN_BUFFER_INFO csbi; 빈 화면( 터미널 ) 만들기
-// GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi); 화면 (터미널)을 가리키는 손잡이 가져오기
-// return csbi.srWindow.Right - csbi.srWindow.Left + 1; 화면의 가로 칸 수 계산
-// return은 가로줄 칸 수
-
 int get_terminal_width() {
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
     return csbi.srWindow.Right - csbi.srWindow.Left + 1;
 }
-
-// 위와 같은 방법으로 세로 칸 수 구하는 함수
 
 int get_terminal_height() {
     CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -147,7 +145,6 @@ void print_centered(const char* line, int term_w) {
     printf("%s\n", line);
 }
 
-// 위에 터미널 정보를 바탕으로 한국어를 중앙 정렬 하기위한 함수
 void print_centered_kr(const char* line, int term_w, int display_width) {
     int pad = (term_w - display_width) / 2;
     if (pad < 0) pad = 0;
@@ -261,17 +258,33 @@ void draw_box_empty(int term_w, int box_w) {
 
 // ===== HP 바 그리기 =====
 void draw_hp_bar(int term_w) {
-    int bar_total = 20;  // 막대 칸 수
+    int bar_total = 20;
     int bar_fill = (player_hp * bar_total) / 100;
     if (bar_fill < 0) bar_fill = 0;
 
-    // 전체 상태 줄 표시폭: "학생   LV 1   HP [====================] 100/100"
+    // 첫 번째 줄: 이름 (학번) - 가운데 정렬
+    char name_line[80];
+    sprintf(name_line, "%s ( %s )", player_name, player_id);
+
+    // 표시 폭 계산 (한글 2, 영문/숫자 1)
+    int name_w = 0;
+    for (int i = 0; name_line[i]; i++) {
+        unsigned char c = (unsigned char)name_line[i];
+        if (c >= 0xE0) { name_w += 2; i += 2; }
+        else name_w += 1;
+    }
+
+    int pad1 = (term_w - name_w) / 2;
+    if (pad1 < 0) pad1 = 0;
+    for (int i = 0; i < pad1; i++) printf(" ");
+    printf(CYAN "%s" RESET "\n", name_line);
+
+    // 두 번째 줄: LV / HP / 학점
     int display_w = 50;
     int pad = (term_w - display_w) / 2;
     if (pad < 0) pad = 0;
     for (int i = 0; i < pad; i++) printf(" ");
 
-    printf(WHITE "학생 " RESET);
     printf(YELLOW " LV %d " RESET, player_lv);
     printf(WHITE " HP " RESET);
     printf(RED "[");
@@ -283,6 +296,14 @@ void draw_hp_bar(int term_w) {
     printf(YELLOW " %d/100" RESET, player_hp);
     printf(WHITE "   학점: " RESET);
     printf(GREEN "%d" RESET, player_score);
+
+    // 족보 보유 표시
+    if (has_jokbo && !jokbo_used) {
+        printf(CYAN "   [족보]" RESET);
+    }
+    else if (has_jokbo && jokbo_used) {
+        printf(GRAY "   [족보:사용됨]" RESET);
+    }
     printf("\n");
 }
 
@@ -462,14 +483,299 @@ void apply_result(int hp_change, int score_change) {
     if (player_hp > 100) player_hp = 100;
 }
 
-// ===== 스테이지 1: 발표 지목 =====
+// ===== 플레이어 정보 입력 화면 =====
+void input_player_info() {
+    system("cls");
+    int W = get_terminal_width();
+    int H = get_terminal_height();
+    int top = (H - 14) / 2;
+    if (top < 0) top = 0;
+    for (int i = 0; i < top; i++) printf("\n");
+
+    printf(CYAN);
+    print_centered("========================================", W);
+    print_centered_kr("       [ 학생 정보를 입력하세요 ]       ", W, 38);
+    print_centered("========================================", W);
+    printf(RESET);
+    printf("\n");
+
+    // 이름 입력
+    int name_pad = (W - 40) / 2;
+    if (name_pad < 0) name_pad = 0;
+
+    for (int i = 0; i < name_pad; i++) printf(" ");
+    printf(YELLOW "   이름   :  " RESET);
+    scanf("%49s", player_name);   // 최대 49글자, 공백까지만
+    // 입력 버퍼 비우기
+    while (getchar() != '\n');
+
+    for (int i = 0; i < name_pad; i++) printf(" ");
+    printf(YELLOW "   학번   :  " RESET);
+    scanf("%19s", player_id);
+    while (getchar() != '\n');
+
+    printf("\n");
+    printf(CYAN);
+    print_centered("========================================", W);
+    printf(RESET);
+    printf("\n");
+
+    // 환영 메시지
+    printf(GREEN);
+    char welcome[100];
+    sprintf(welcome, "환영합니다, %s 학생! (%s)", player_name, player_id);
+    // 표시 폭 계산 (대략)
+    int wlen = 0;
+    for (int i = 0; welcome[i]; i++) {
+        unsigned char c = (unsigned char)welcome[i];
+        if (c >= 0xE0) { wlen += 2; i += 2; }
+        else wlen++;
+    }
+    print_centered_kr(welcome, W, wlen);
+    printf(RESET);
+    printf("\n");
+
+    print_centered_kr("[ 엔터를 눌러 게임을 시작합니다 ]", W, 33);
+    while (_getch() != KEY_ENTER);
+}
+
+// ===== 플레이어 정보 입력 =====
+void player_setup() {
+    system("cls");
+    int W = get_terminal_width();
+    int H = get_terminal_height();
+    int top = (H - 15) / 2;
+    if (top < 0) top = 0;
+    for (int i = 0; i < top; i++) printf("\n");
+
+    printf(YELLOW);
+    print_centered_kr("=== 학생 정보 등록 ===", W, 22);
+    printf(RESET);
+    printf("\n");
+
+    print_centered_kr("학교에서 당신을 기록합니다.", W, 28);
+    print_centered_kr("이름과 학번을 입력해주세요.", W, 28);
+    printf("\n");
+
+    // === 이름 입력 ===
+    int pad = (W - 50) / 2;
+    if (pad < 0) pad = 0;
+    for (int i = 0; i < pad; i++) printf(" ");
+    printf(CYAN "이름  >> " RESET);
+    scanf("%31s", player_name);
+    while (getchar() != '\n');  // 입력 버퍼 비우기
+
+    // === 학번 입력 ===
+    for (int i = 0; i < pad; i++) printf(" ");
+    printf(CYAN "학번  >> " RESET);
+    scanf("%15s", player_id);
+    while (getchar() != '\n');
+
+    printf("\n");
+
+    // 등록 완료 메시지
+    char welcome[100];
+    sprintf(welcome, "%s (%s) 학생, 등록 완료!", player_name, player_id);
+    int wlen = 0;
+    for (int i = 0; welcome[i]; i++) {
+        unsigned char c = (unsigned char)welcome[i];
+        if (c >= 0xE0) { wlen += 2; i += 2; }
+        else wlen += 1;
+    }
+    int wpad = (W - wlen) / 2;
+    if (wpad < 0) wpad = 0;
+    for (int i = 0; i < wpad; i++) printf(" ");
+    printf(GREEN "%s" RESET "\n", welcome);
+
+    printf("\n");
+    print_centered_kr("[ 엔터를 눌러 수업에 들어가기 ]", W, 32);
+
+    while (_getch() != KEY_ENTER);
+}
+
+// ===== 스테이지 1: 개강총회 =====
 void stage1() {
     int W = get_terminal_width();
     int H = get_terminal_height();
     int top = (H - 22) / 2;
     if (top < 0) top = 0;
 
-    // ===== 0단계: 긴장감 조성 (깜빡임) =====
+    // ===== 0단계: 긴장감 조성 =====
+    clear_screen_with_padding(top + 8);
+    Sleep(500);
+    blink_print(YELLOW "* 처음 보는 동기, 선배들이 잔을 들고 있다." RESET, W, 38);
+    Sleep(700);
+
+    // ===== 1단계: 상황 묘사 =====
+    clear_screen_with_padding(top);
+
+    printf(YELLOW);
+    print_centered_kr("[ STAGE 1 - 개강총회 ]", W, 22);
+    printf(RESET);
+    printf("\n");
+
+    const char* intro_lines[] = {
+        "* 신입생 환영 개강총회 날.",
+        "* 오늘 처음 보는 동기들과 선배들이 가득하다.",
+        "",
+        YELLOW "* 선배: \"신입생! 한 잔 받아!\"" RESET,
+        "",
+        GRAY "* (술을 제량껏 마셔야겠다...)" RESET
+    };
+    int intro_widths[] = { 18, 42, 0, 26, 0, 28 };
+
+    show_text_box(intro_lines, intro_widths, 6, W);
+    printf("\n");
+    draw_hp_bar(W);
+    printf("\n");
+    printf(GREEN);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    printf(RESET);
+
+    while (_getch() != KEY_ENTER);
+
+    // ===== 2단계: 선택지 =====
+    int selected = 0;
+    int key;
+
+    const char* choices[] = {
+        "1차만 가기",
+        "2차까지 가기",
+        "선배들과 끝까지",
+        "얼굴도장만"
+    };
+    int choice_widths[] = { 12, 14, 18, 12 };
+
+    while (1) {
+        clear_screen_with_padding(top);
+
+        printf(YELLOW);
+        print_centered_kr("[ STAGE 1 - 개강총회 ]", W, 22);
+        printf(RESET);
+        printf("\n");
+
+        const char* prompt_lines[] = {
+            "* 어디까지 갈 것인가?"
+        };
+        int prompt_widths[] = { 21 };
+        show_text_box_instant(prompt_lines, prompt_widths, 1, W);
+        printf("\n");
+
+        show_choice_box(choices, choice_widths, selected, W);
+        printf("\n");
+
+        draw_hp_bar(W);
+        printf("\n");
+        printf(GRAY);
+        print_centered_kr("[ 방향키로 이동    엔터로 선택 ]", W, 34);
+        printf(RESET);
+
+        key = _getch();
+        if (key == 224 || key == 0) {
+            key = _getch();
+            if (key == KEY_LEFT && selected % 2 == 1) selected--;
+            else if (key == KEY_RIGHT && selected % 2 == 0) selected++;
+            else if (key == KEY_UP && selected >= 2) selected -= 2;
+            else if (key == KEY_DOWN && selected < 2) selected += 2;
+        }
+        else if (key == KEY_ENTER) break;
+    }
+
+    // ===== 3단계: 결과 =====
+    clear_screen_with_padding(top);
+
+    printf(YELLOW);
+    print_centered_kr("[ STAGE 1 - 결과 ]", W, 18);
+    printf(RESET);
+    printf("\n");
+
+    const char* result_msg = "";
+    int result_msg_w = 0;
+    int hp_change = 0;
+    int score_change = 0;
+    int got_jokbo = 0;
+
+    switch (selected) {
+    case 0:
+        result_msg = YELLOW "* 1차만 깔끔하게 마치고 귀가했다." RESET;
+        result_msg_w = 33;
+        hp_change = 0; score_change = 0;
+        break;
+    case 1:
+        result_msg = YELLOW "* 2차까지 갔다. 머리가 좀 아프지만 살만하다." RESET;
+        result_msg_w = 44;
+        hp_change = -15; score_change = 0;
+        break;
+    case 2:
+        result_msg = YELLOW "* 선배들과 끝까지 마셨다! 족보를 얻었다!" RESET;
+        result_msg_w = 40;
+        hp_change = -40; score_change = 0;
+        got_jokbo = 1;
+        break;
+    case 3:
+        result_msg = YELLOW "* 도망가려다 잡혀버렸다. 술자리가 끝장났다..." RESET;
+        result_msg_w = 45;
+        hp_change = -50; score_change = 0;
+        break;
+    }
+
+    char hp_line[64];
+    if (hp_change < 0)
+        sprintf(hp_line, RED "* HP %d" RESET, hp_change);
+    else
+        sprintf(hp_line, GREEN "* HP 변동 없음" RESET);
+
+    const char* result_lines[5];
+    int result_widths[5];
+    int line_count = 3;
+
+    result_lines[0] = result_msg;
+    result_widths[0] = result_msg_w;
+    result_lines[1] = "";
+    result_widths[1] = 0;
+    result_lines[2] = hp_line;
+    result_widths[2] = (hp_change < 0) ? 10 : 14;
+
+    if (got_jokbo) {
+        result_lines[3] = CYAN "* 족보 획득! (시험에서 1회 사용 가능)" RESET;
+        result_widths[3] = 36;
+        line_count = 4;
+    }
+
+    show_text_box(result_lines, result_widths, line_count, W);
+
+    apply_result(hp_change, score_change);
+    if (got_jokbo) has_jokbo = 1;
+
+    printf("\n");
+    draw_hp_bar(W);
+    printf("\n");
+    printf(GREEN);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    printf(RESET);
+
+    while (_getch() != KEY_ENTER);
+
+    // ===== 4단계: 스테이지 종료 =====
+    clear_screen_with_padding(H / 2 - 3);
+    blink_print(CYAN "STAGE 1 클리어!" RESET, W, 17);
+    printf("\n");
+    print_centered_kr("내일은 첫 수업이다...", W, 22);
+    printf("\n\n");
+    printf(GREEN);
+    print_centered_kr("[ 엔터를 눌러 다음 스테이지 ]", W, 30);
+    printf(RESET);
+    while (_getch() != KEY_ENTER);
+}
+
+// ===== 스테이지 2: 발표 지목 =====
+void stage2() {
+    int W = get_terminal_width();
+    int H = get_terminal_height();
+    int top = (H - 22) / 2;
+    if (top < 0) top = 0;
+
+    // ===== 0단계: 긴장감 조성 (깜빡임만) =====
     clear_screen_with_padding(top + 8);
     Sleep(500);
     blink_print(RED "* 교수님이 당신을 노려본다." RESET, W, 24);
@@ -479,7 +785,7 @@ void stage1() {
     clear_screen_with_padding(top);
 
     printf(YELLOW);
-    print_centered_kr("[ STAGE 1 - 갑작스러운 발표 지목 ]", W, 36);
+    print_centered_kr("[ STAGE 2 - 갑작스러운 발표 지목 ]", W, 36);
     printf(RESET);
     printf("\n");
 
@@ -520,7 +826,7 @@ void stage1() {
         clear_screen_with_padding(top);
 
         printf(YELLOW);
-        print_centered_kr("[ STAGE 1 - 갑작스러운 발표 지목 ]", W, 36);
+        print_centered_kr("[ STAGE 2 - 갑작스러운 발표 지목 ]", W, 36);
         printf(RESET);
         printf("\n");
 
@@ -557,7 +863,7 @@ void stage1() {
     clear_screen_with_padding(top);
 
     printf(YELLOW);
-    print_centered_kr("[ STAGE 1 - 결과 ]", W, 18);
+    print_centered_kr("[ STAGE 2 - 결과 ]", W, 18);
     printf(RESET);
     printf("\n");
 
@@ -625,10 +931,10 @@ void stage1() {
     // ===== 4단계: 스테이지 종료 =====
     clear_screen_with_padding(H / 2 - 3);
     printf(CYAN);
-    blink_print(CYAN "STAGE 1 클리어!" RESET, W, 17);
+    blink_print(CYAN "STAGE 2 클리어!" RESET, W, 17);
     printf(RESET);
     printf("\n");
-    print_centered_kr("다음 수업이 기다린다...", W, 24);
+    print_centered_kr("중간고사가 다가온다...", W, 22);
     printf("\n\n");
     printf(GREEN);
     print_centered_kr("[ 엔터를 눌러 돌아가기 ]", W, 26);
@@ -636,7 +942,351 @@ void stage1() {
     while (_getch() != KEY_ENTER);
 }
 
-// ===== 타이틀 메뉴 관련 =====
+// ===== 시험 문제 하나 출제 =====
+// 정답 인덱스를 받아서, 맞으면 1 반환
+int ask_question(const char* title, const char* question_lines[], int question_widths[], int q_line_count,
+    const char* choices[], int choice_widths[], int correct_idx) {
+    int W = get_terminal_width();
+    int H = get_terminal_height();
+    int top = (H - 24) / 2;
+    if (top < 0) top = 0;
+
+    int selected = 0;
+    int key;
+    int first_time = 1;
+
+    while (1) {
+        clear_screen_with_padding(top);
+
+        printf(YELLOW);
+        print_centered_kr(title, W, 30);
+        printf(RESET);
+        printf("\n");
+
+        if (first_time) {
+            show_text_box(question_lines, question_widths, q_line_count, W);
+            first_time = 0;
+        }
+        else {
+            show_text_box_instant(question_lines, question_widths, q_line_count, W);
+        }
+        printf("\n");
+
+        show_choice_box(choices, choice_widths, selected, W);
+        printf("\n");
+
+        draw_hp_bar(W);
+        printf("\n");
+
+        // 족보 사용 가능 안내
+        if (has_jokbo && !jokbo_used) {
+            printf(CYAN);
+            print_centered_kr("[ J 키: 족보 사용하기 (1회 한정) ]", W, 36);
+            printf(RESET);
+        }
+        printf(GRAY);
+        print_centered_kr("[ 방향키로 이동    엔터로 선택 ]", W, 34);
+        printf(RESET);
+
+        key = _getch();
+        if (key == 224 || key == 0) {
+            key = _getch();
+            if (key == KEY_LEFT && selected % 2 == 1) selected--;
+            else if (key == KEY_RIGHT && selected % 2 == 0) selected++;
+            else if (key == KEY_UP && selected >= 2) selected -= 2;
+            else if (key == KEY_DOWN && selected < 2) selected += 2;
+        }
+        else if (key == 'j' || key == 'J') {
+            // 족보 사용
+            if (has_jokbo && !jokbo_used) {
+                jokbo_used = 1;
+                clear_screen_with_padding(top + 5);
+                printf(CYAN);
+                print_centered_kr("[ 족보를 펼쳤다! ]", W, 20);
+                printf(RESET);
+                printf("\n\n");
+
+                char hint[80];
+                sprintf(hint, "정답은 %d번이다!", correct_idx + 1);
+                int hlen = 0;
+                for (int i = 0; hint[i]; i++) {
+                    unsigned char c = (unsigned char)hint[i];
+                    if (c >= 0xE0) { hlen += 2; i += 2; }
+                    else hlen += 1;
+                }
+                printf(YELLOW);
+                print_centered_kr(hint, W, hlen);
+                printf(RESET);
+                printf("\n");
+                printf(GREEN);
+                print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+                printf(RESET);
+                while (_getch() != KEY_ENTER);
+                first_time = 1;  // 다시 그릴 때 타이핑 효과
+            }
+        }
+        else if (key == KEY_ENTER) break;
+    }
+
+    // 결과 표시
+    clear_screen_with_padding(top + 5);
+    int correct = (selected == correct_idx);
+
+    if (correct) {
+        printf(GREEN);
+        blink_print(GREEN "* 정답이다!" RESET, W, 12);
+        printf(RESET);
+    }
+    else {
+        printf(RED);
+        blink_print(RED "* 오답이다..." RESET, W, 14);
+        printf(RESET);
+        char correct_msg[80];
+        sprintf(correct_msg, "정답은 %d번이었다.", correct_idx + 1);
+        int clen = 0;
+        for (int i = 0; correct_msg[i]; i++) {
+            unsigned char c = (unsigned char)correct_msg[i];
+            if (c >= 0xE0) { clen += 2; i += 2; }
+            else clen += 1;
+        }
+        printf("\n");
+        print_centered_kr(correct_msg, W, clen);
+    }
+    printf("\n\n");
+    printf(GREEN);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    printf(RESET);
+    while (_getch() != KEY_ENTER);
+
+    return correct;
+}
+
+// ===== 스테이지 3: 중간고사 =====
+void stage3() {
+    int W = get_terminal_width();
+    int H = get_terminal_height();
+    int top = (H - 22) / 2;
+    if (top < 0) top = 0;
+
+    // ===== 0단계: 시험 시작 =====
+    clear_screen_with_padding(top + 8);
+    Sleep(500);
+    blink_print(RED "* 중간고사 시험지가 배포된다." RESET, W, 28);
+    Sleep(700);
+
+    // ===== 1단계: 상황 묘사 =====
+    clear_screen_with_padding(top);
+
+    printf(YELLOW);
+    print_centered_kr("[ STAGE 3 - 중간고사 ]", W, 22);
+    printf(RESET);
+    printf("\n");
+
+    const char* intro_lines[] = {
+        "* 드디어 중간고사 날이다.",
+        "* 시험지를 받아들고 한숨이 나온다.",
+        "",
+        YELLOW "* 교수: \"시작!\"" RESET,
+        "",
+        GRAY "* (총 3문제. 맞춰야 학점이 안 깎인다.)" RESET
+    };
+    int intro_widths[] = { 16, 28, 0, 14, 0, 38 };
+
+    show_text_box(intro_lines, intro_widths, 6, W);
+    printf("\n");
+    draw_hp_bar(W);
+    printf("\n");
+    printf(GREEN);
+    print_centered_kr("[ 엔터를 눌러 시험 시작 ]", W, 26);
+    printf(RESET);
+
+    while (_getch() != KEY_ENTER);
+
+    int correct_count = 0;
+
+    // ===== 문제 1: stdio.h 철자 =====
+    const char* q1_lines[] = {
+        "* 다음 중 올바른 헤더 파일은?"
+    };
+    int q1_widths[] = { 28 };
+    const char* q1_choices[] = {
+        "studio.h", "stdio.h", "stido.h", "stdoi.h"
+    };
+    int q1_choice_widths[] = { 8, 8, 8, 8 };
+    if (ask_question("[ 문제 1 / 3 - 헤더 파일 ]", q1_lines, q1_widths, 1,
+        q1_choices, q1_choice_widths, 1)) {
+        correct_count++;
+    }
+    else {
+        player_score -= 15;
+    }
+
+    // ===== 문제 2: GitHub 업로드 순서 =====
+    const char* q2_lines[] = {
+        "* GitHub에 업로드하는 올바른 순서는?"
+    };
+    int q2_widths[] = { 36 };
+    const char* q2_choices[] = {
+        "add -> push -> commit",
+        "commit -> add -> push",
+        "add -> commit -> push",
+        "push -> commit -> add"
+    };
+    int q2_choice_widths[] = { 21, 21, 21, 21 };
+    if (ask_question("[ 문제 2 / 3 - GitHub 업로드 ]", q2_lines, q2_widths, 1,
+        q2_choices, q2_choice_widths, 2)) {
+        correct_count++;
+    }
+    else {
+        player_score -= 15;
+    }
+
+    // ===== 문제 3: scanf vs _getch =====
+    const char* q3_lines[] = {
+        "* scanf와 _getch의 차이로 옳은 것은?"
+    };
+    int q3_widths[] = { 36 };
+    const char* q3_choices[] = {
+        "scanf는 즉시 입력",
+        "_getch는 엔터 필요",
+        "_getch는 즉시 입력",
+        "둘 다 동일하다"
+    };
+    int q3_choice_widths[] = { 15, 17, 17, 13 };
+    if (ask_question("[ 문제 3 / 3 - 입력 함수 ]", q3_lines, q3_widths, 1,
+        q3_choices, q3_choice_widths, 2)) {
+        correct_count++;
+    }
+    else {
+        player_score -= 15;
+    }
+
+    // ===== 결과 발표 =====
+    clear_screen_with_padding(top);
+
+    printf(YELLOW);
+    print_centered_kr("[ 중간고사 결과 ]", W, 18);
+    printf(RESET);
+    printf("\n");
+
+    char result_msg[80];
+    sprintf(result_msg, "* %d / 3 문제 정답!", correct_count);
+    int rlen = 0;
+    for (int i = 0; result_msg[i]; i++) {
+        unsigned char c = (unsigned char)result_msg[i];
+        if (c >= 0xE0) { rlen += 2; i += 2; }
+        else rlen += 1;
+    }
+
+    const char* final_lines[3];
+    int final_widths[3];
+
+    final_lines[0] = result_msg;
+    final_widths[0] = rlen;
+    final_lines[1] = "";
+    final_widths[1] = 0;
+
+    if (correct_count == 3) {
+        final_lines[2] = GREEN "* 완벽하다! 학점 손실 없음!" RESET;
+        final_widths[2] = 26;
+    }
+    else if (correct_count == 2) {
+        final_lines[2] = YELLOW "* 한 문제 틀렸다. 학점 -15" RESET;
+        final_widths[2] = 25;
+    }
+    else if (correct_count == 1) {
+        final_lines[2] = RED "* 두 문제 틀렸다. 학점 -30" RESET;
+        final_widths[2] = 26;
+    }
+    else {
+        final_lines[2] = RED "* 다 틀렸다. 학점 -45" RESET;
+        final_widths[2] = 21;
+    }
+
+    show_text_box(final_lines, final_widths, 3, W);
+
+    printf("\n");
+    draw_hp_bar(W);
+    printf("\n");
+    printf(GREEN);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    printf(RESET);
+    while (_getch() != KEY_ENTER);
+
+    // ===== 스테이지 종료 =====
+    clear_screen_with_padding(H / 2 - 3);
+    blink_print(CYAN "STAGE 3 클리어!" RESET, W, 17);
+    printf("\n");
+    print_centered_kr("한 학기가 끝났다...", W, 20);
+    printf("\n\n");
+    printf(GREEN);
+    print_centered_kr("[ 엔터를 눌러 결과 확인 ]", W, 26);
+    printf(RESET);
+    while (_getch() != KEY_ENTER);
+}
+
+// ===== 엔딩 화면 =====
+void show_ending() {
+    int W = get_terminal_width();
+    int H = get_terminal_height();
+    system("cls");
+    for (int i = 0; i < H / 4; i++) printf("\n");
+
+    printf(YELLOW);
+    print_centered_kr("=== 한 학기를 마치며 ===", W, 24);
+    printf(RESET);
+    printf("\n\n");
+
+    // 최종 결과
+    char hp_msg[60], score_msg[60];
+    sprintf(hp_msg, "최종 체력: %d / 100", player_hp);
+    sprintf(score_msg, "최종 학점: %d", player_score);
+    print_centered_kr(hp_msg, W, 20);
+    print_centered_kr(score_msg, W, 16);
+    printf("\n");
+
+    // 엔딩 분기
+    if (player_hp >= 50 && player_score >= 50) {
+        printf(GREEN);
+        print_centered_kr("[ TRUE END: 졸업 ]", W, 20);
+        printf(RESET);
+        printf("\n");
+        print_centered_kr("체력도 학점도 챙긴 당신!", W, 26);
+        print_centered_kr("무사히 졸업합니다.", W, 18);
+    }
+    else if (player_hp < 50 && player_score >= 50) {
+        printf(YELLOW);
+        print_centered_kr("[ BAD END: 대원가 ]", W, 21);
+        printf(RESET);
+        printf("\n");
+        print_centered_kr("학점은 좋았지만 몸이 망가졌다.", W, 30);
+        print_centered_kr("입대 통지서가 도착했다...", W, 26);
+    }
+    else if (player_hp >= 50 && player_score < 50) {
+        printf(CYAN);
+        print_centered_kr("[ NORMAL END: 휴학 ]", W, 22);
+        printf(RESET);
+        printf("\n");
+        print_centered_kr("몸은 멀쩡하지만 학점이 부족하다.", W, 32);
+        print_centered_kr("일단 휴학하기로 했다.", W, 22);
+    }
+    else {
+        printf(RED);
+        print_centered_kr("[ WORST END: 제적 ]", W, 21);
+        printf(RESET);
+        printf("\n");
+        print_centered_kr("체력도, 학점도 모두 잃었다...", W, 30);
+        print_centered_kr("학교를 떠나야 할 시간이다.", W, 26);
+    }
+
+    printf("\n\n");
+    printf(GREEN);
+    print_centered_kr("[ 엔터를 눌러 타이틀로 ]", W, 26);
+    printf(RESET);
+    while (_getch() != KEY_ENTER);
+}
+
+
 void print_menu_item(const char* label, int term_w, int is_selected) {
     int display_width = 26;
     int pad = (term_w - display_width) / 2;
@@ -694,14 +1344,14 @@ void show_title(int selected) {
     print_menu_item("[ 3 ]   팀 소개       ", W, selected == 2);
     printf("\n");
     print_menu_item("[ 4 ]   게임 종료     ", W, selected == 3);
-    printf("\n");
+    printf("\n\n");
 
     printf(GRAY);
     print_centered("================================================================", W);
     printf(RESET);
     printf("\n");
     print_centered_kr("체력이 높으면 졸업  /  낮으면 대원가        ver 1.0", W, 50);
-    printf("\n");
+    printf("\n\n");
     printf(GREEN);
     print_centered_kr("[ 화살표 위/아래 = 이동    엔터 = 선택 ]", W, 42);
     printf(RESET);
@@ -804,11 +1454,17 @@ int main() {
         }
         else if (key == KEY_ENTER) {
             if (selected == 0) {
-                // 게임 시작 - 상태 초기화 후 스테이지 1
+                // 게임 시작 - 상태 초기화 후 플레이어 정보 입력 → 전체 스테이지
                 player_hp = 100;
-                player_score = 0;
+                player_score = 50;   // 기본 학점 50점 시작 (감점/획득용)
                 player_lv = 1;
-                stage1();
+                has_jokbo = 0;
+                jokbo_used = 0;
+                player_setup();      // 이름/학번 입력
+                stage1();            // 개강총회
+                stage2();            // 발표 지목
+                stage3();            // 중간고사
+                show_ending();       // 엔딩
             }
             else if (selected == 1) show_play_info();
             else if (selected == 2) show_team_info();
@@ -830,4 +1486,3 @@ int main() {
     }
     return 0;
 }
-
