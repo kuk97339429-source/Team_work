@@ -61,7 +61,8 @@ void type_print(const char* text) {
             putchar(text[i]); i++;
             fflush(stdout);
             Sleep(TYPE_DELAY);
-        } else {
+        }
+        else {
             // 영문/기호: 문장부호면 느리게
             if (is_punct(text[i])) Sleep(TYPE_DELAY_SLOW);
             else Sleep(TYPE_DELAY);
@@ -85,7 +86,61 @@ void type_print(const char* text) {
     printf("\n");
 }
 
-// 깜빡임 효과 (text를 2번 깜빡임)
+// ===== 교수님 아스키 아트 출력 =====
+void show_professor_ascii(int term_w) {
+    // Braille 패턴 아스키 아트 (UTF-8 멀티바이트 문자 포함)
+    const char* prof[] = {
+"⣗⣟⡮⣗⣟⡮⣗⣟⣞⣗⡯⣿⢽⠏⡃⠄⠠⠀⠄⠠⠀⠄⠠⠀⠄⠠⠀⠄⠠⠀⠄⠠⠀⠄⠠⠀⠄⠠⢀⠢⡑⢻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳",
+"⣞⣗⡯⣗⣗⡯⣗⡯⡾⣕⡯⡏⠅⠂⠄⠨⠀⠅⠨⠀⠅⠨⠀⠅⠨⠀⠅⠨⠀⠅⠨⠀⢅⠨⠀⠅⠨⢐⠐⢐⠨⠢⡑⢟⣞⣗⣟⣞⣗⣟⣞⣗⣟⣞⣗⣟⣞⣗⣟⣞⣗⣟⣞⣗⣟⣞⣗⡯",
+"⣟⡾⣽⣳⣳⢯⣗⡯⡯⣗⠃⡐⠀⠅⠨⠀⠅⠌⠠⠡⠈⠄⠡⠈⠄⠡⠈⠄⠡⡈⠄⡁⢂⠡⠑⠨⡐⠠⠈⠄⠨⠀⠌⢌⢺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⢯",
+"⣗⡯⣗⣗⡯⣟⡾⡽⡝⢂⠀⡂⠡⠈⠄⡁⢂⠡⠈⠄⠡⠈⠄⠡⢁⠡⠈⠌⠂⡂⠅⡐⠠⠀⠅⠡⠈⢂⠁⠌⠠⠁⠌⡀⢂⢻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⢯⡯",
+"⣗⡯⣗⣗⡯⣗⡯⡯⠃⢀⠐⠠⠈⠄⠡⠐⡀⠂⡁⠌⢂⠡⠁⠌⠠⠀⠅⠨⠀⡂⠡⠐⢈⠠⠁⠌⢐⠠⠈⠄⠡⠈⠄⠂⠂⡂⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣻⣺⣳⣟⣾⣯⣿⣾⣻⡽",
+"⣳⢯⣗⣗⡯⣗⣯⠃⠐⠀⠌⠠⠁⠌⠌⠄⢂⠁⠔⢈⢐⢈⠐⠠⠈⠄⠡⠈⠄⡐⠈⢐⠠⠐⠈⢐⠀⢂⠁⠌⠀⠅⡈⠄⠁⢂⠎⣞⣗⣟⣞⣗⣟⣞⣗⣟⣞⣗⣟⣾⣽⣯⣿⣾⢿⣾⣯⢿",
+"⣺⢽⣺⣺⢽⣳⡝⡀⠁⡈⠠⠈⠌⠠⡑⠨⠀⢂⠡⠀⠢⠐⢈⠐⠠⡀⢁⠨⠀⢐⠠⠀⠐⠈⠄⡀⠈⠄⠐⠈⠄⠂⠠⠀⠡⠀⢹⢮⣗⣟⣞⣗⣟⣞⣗⣿⣽⣿⣽⣾⢿⣾⢿⣾⢿⣷⢿⣻",
+"⣺⢽⣺⣺⢽⣺⢇⠠⠀⠠⠀⠅⠂⡁⠔⠈⡈⠠⠀⠅⠨⠐⡀⠂⠄⢂⡂⡀⢈⠀⠠⠈⠄⠂⠄⠐⠀⠂⠁⠂⠈⡀⠂⠁⡀⠂⡘⣽⣺⣳⣻⣺⣳⣻⣞⣿⣽⣾⢿⣾⢿⣻⣿⣻⣿⣻⣿⣻",
+"⣽⢽⣾⣺⡽⣞⡇⡀⠐⠀⠐⢈⠀⠄⠂⡐⠀⠅⠂⢁⠂⠁⠄⠂⡀⠢⡊⢆⢂⠌⠄⡑⢐⢄⢈⠈⠂⠡⡈⡄⡡⡀⠄⠁⢠⢳⢸⣺⣳⢽⣺⣳⣻⣺⣺⣯⣿⣾⢿⣻⣿⣻⣽⣿⢾⣯⣿⣻",
+"⣽⢿⣯⡿⣟⣿⡇⡀⠐⠈⢀⠐⠀⠨⠀⠄⠁⢂⠁⠠⠀⠨⠀⢐⠀⢌⢪⠪⡐⢕⢱⠨⡢⠐⠁⠠⠑⡐⢈⢐⢐⠈⠠⠈⢸⢐⡕⡜⡾⣽⣺⣳⣻⣺⣞⡾⡷⣿⢿⣻⣽⣿⣽⣾⢿⣯⣿⣽",
+"⢿⣽⢷⣻⢯⣟⡇⠄⠐⠀⠄⢀⠈⠐⢀⠨⠀⠂⡀⠂⠈⢀⠈⡰⠀⠸⡐⡕⡈⡪⡸⠘⠀⡀⢈⢠⢥⢦⡦⡌⠢⡅⢸⣕⠠⠡⢓⢭⢫⣗⣟⡮⣗⣷⣳⢯⣟⣿⢿⣻⣽⣾⢿⡾⣟⡿⣞⣷",
+"⢽⣺⣟⡿⣽⣺⢽⠀⠐⠀⠐⠀⠀⡁⠀⢀⠀⡁⠀⠠⠈⠀⡠⡊⢠⢣⠢⡑⢔⠨⡀⠄⠡⢀⢮⢿⠝⢯⢿⡝⡨⡸⠀⡷⣕⢬⠨⣪⡳⣗⣗⣯⢷⣗⣯⢿⣷⣻⣿⣻⣽⣾⢿⣻⡽⡯⣟⣾",
+"⢽⣗⣯⢯⡷⡯⡿⡅⠄⢁⠀⡁⠀⠄⠈⠀⢀⠀⠂⠠⠁⠐⠌⠂⠁⠡⠨⠨⠂⠢⠀⠂⢅⢂⢿⢽⢥⢢⢻⣸⡲⠫⡰⣝⣞⠌⢢⡳⡯⣗⡿⣾⢿⣻⣟⣿⣽⣿⣽⣿⡽⣞⣯⣗⡯⣟⣗⣿",
+"⣻⣾⣺⢽⡽⡯⡿⣽⡸⡀⢀⠀⠄⠂⠐⠈⠀⠐⠠⡢⠐⠁⢀⢄⢡⠐⠠⠂⢈⢄⢇⢅⢐⠰⡐⡐⣂⠇⠣⡁⣆⢮⣻⡺⡎⡆⡳⡇⣟⣗⣿⢿⣟⣿⣻⣽⡿⣾⢿⣾⣻⣽⣺⣗⡯⣗⣟⡾",
+"⣟⡾⡽⣽⢽⣯⣟⡷⣷⢵⡀⠄⠀⠄⠠⠀⠂⠡⢁⠄⢄⢮⣺⢽⠯⣟⡆⠅⢐⠨⢯⢮⣳⡢⣌⣌⣄⣲⡱⣝⣞⣗⢷⣝⡇⣗⠬⣞⣷⢯⣿⣟⣿⣻⣯⣿⣟⣿⣻⡽⣗⣟⣞⡾⣽⡳⣗⡯",
+"⣗⡯⣯⢯⣟⡾⣯⢿⡯⣟⣿⣜⣄⢄⢢⠀⢈⠀⠕⡌⢔⢽⣺⢥⡠⢏⠌⠌⠠⡈⢪⣳⡳⣝⡞⣞⢞⢮⣻⣺⡺⣜⣗⢷⣝⢾⠌⣿⣻⣿⣽⣯⡿⣯⡿⣞⣯⣟⡷⣿⢽⣳⣗⢯⡳⣯⡳⡯",
+"⣗⣯⣿⣽⢾⣽⣻⣯⢿⡽⣾⢽⣞⣇⢆⢑⠄⠠⠑⢌⡂⡢⡡⡱⡘⢐⢈⢄⢧⢱⢐⢗⢽⢮⡳⣝⢖⢡⡸⡘⣝⣞⢮⡳⡽⡽⡅⣿⣟⣷⣟⡷⣟⣷⣻⢽⣺⣳⢯⢯⣻⣺⡺⡽⣝⢾⢽⣝",
+"⣿⣻⣾⣯⢿⣞⣷⣻⡯⣿⡽⣯⢿⣞⣎⢆⠇⡂⡑⡄⡌⣊⢨⢠⡰⡲⡵⣝⣝⢆⢳⡝⡽⢵⢹⢐⢜⢮⢯⢯⣲⡹⡵⡽⡽⣝⠎⣾⣿⣽⡯⣿⢽⣺⢽⢽⣺⡺⡽⣝⣞⡮⣯⡻⡮⣯⣳⡳",
+"⡯⣿⣺⢽⣟⣷⣻⣺⢽⣳⢿⢽⢯⣗⣟⡮⡪⣐⠐⠌⢪⢪⣫⢳⢝⣝⢞⢮⣺⡐⡬⣢⣢⣢⢱⢱⢽⢹⠝⢗⠷⠝⡎⣗⢽⢮⢃⠹⣾⣗⡿⣽⢽⣺⢽⢽⢮⢯⢯⣳⡳⡽⡮⣯⣻⡺⡮⡯",
+"⡯⣗⡯⣟⡾⣺⣳⢿⣽⡾⣯⡯⣟⣞⡾⡽⣽⣺⢼⡨⡢⡑⢌⠯⡪⡮⣫⡳⣕⢆⢯⣺⣺⢪⢓⢕⡱⡵⣝⢗⢽⣝⢷⢵⢽⠑⢬⢇⢛⣚⢽⡽⣽⣺⢽⢽⢽⣝⣗⣗⢯⢯⣻⡺⡮⡯⡯⡯",
+"⢽⣳⢽⣳⢯⣗⣿⣻⣽⣟⣷⢿⣗⣷⢯⣟⡷⣯⡯⣷⢷⡮⣮⠸⡨⣓⢧⢯⢮⣣⢳⡳⣑⣕⢗⠗⢍⢑⢌⡆⡧⡵⡽⣝⢘⢈⢮⡻⡆⢪⣧⡻⡳⡯⣿⢽⣻⡞⣞⠾⣹⣙⢮⢭⢭⢍⢭⢭",
+"⣟⡾⣽⣺⢽⣺⣞⢾⣺⣳⣻⣻⡯⣟⣯⣷⣻⣗⣿⢽⡯⣿⢽⣳⣕⢜⠜⢮⡳⣕⢕⣇⣗⢮⢆⢣⡣⣯⡳⡽⡽⡽⣝⠎⠠⠢⡳⡽⢡⡳⣗⡯⡆⡈⣌⢭⡲⣕⣗⣝⣞⢮⢏⢯⡳⡽⣝⣕",
+"⡷⣯⣗⡯⣟⣞⡾⣽⣺⣳⣻⣺⢽⣳⣟⡾⣷⣻⢾⣻⣯⣟⣯⢿⡽⡷⣝⡢⠝⡜⡲⢜⠼⣝⢮⢲⡝⡮⡯⡯⣯⠻⠌⡐⡍⡪⡪⢋⡲⡯⡗⣏⡵⣽⣪⡳⣝⣞⢮⡺⡼⣝⢽⢵⢽⢝⣞⢮",
+"⣟⣗⡯⡯⣗⣗⡯⣗⣗⣟⡮⣯⣟⣾⣺⢽⣻⣺⢽⣳⣳⢯⣺⢽⢽⢽⣳⢯⣻⣲⣅⢑⢁⠃⠝⠕⢝⢝⠎⠏⡊⠌⡂⡪⢌⠆⡣⡱⡱⡩⣞⡵⣫⡺⣸⣺⡺⣮⡳⣝⣝⢮⢯⡳⡽⣕⡗⣗",
+"⣷⣯⣿⣽⣳⢯⡯⣗⣷⣳⢯⣗⣷⣳⢯⣟⣞⡾⣽⣺⣺⢽⣺⡽⣽⢽⣺⢽⣺⣗⠿⡠⢣⢊⠔⡁⡂⡢⠨⢂⢢⠱⡨⡊⢆⢕⢕⢕⢼⢝⢮⡫⡎⢎⢎⢮⣻⣺⢸⢪⣺⢽⢵⢽⣝⢞⣞⢮",
+"⣷⢿⣾⣯⡿⣯⣯⣗⡷⣯⣻⣺⣺⣺⢽⣺⢵⢯⣗⣟⣾⣻⢾⡽⣿⣽⢾⣿⣺⣞⡇⡧⡡⢑⠔⡌⢲⢐⠅⠣⡑⡕⡱⢨⢪⢪⢪⢎⢯⢳⢱⢝⠌⣞⢸⢕⣗⡕⢕⡳⣝⢮⢯⣳⣳⡣⣳⡣",
+"⣻⢽⡷⣟⣿⣻⢾⡽⣟⣿⢾⣺⣞⡾⣽⡺⡽⣽⣺⣳⣻⣺⢽⣽⣳⣻⡽⣯⢿⡽⡧⢳⢱⢱⢱⢢⠥⡡⠹⡘⡔⡱⡨⣂⠢⢑⢱⡝⡅⡇⢸⢱⠀⣗⠨⣳⢳⡣⡑⣝⢮⡓⣗⢷⢕⡇⣗⢕",
+"⡪⣳⡫⣳⡳⡳⡳⣽⣻⣟⣯⣷⣳⢯⣗⢯⢯⣗⣗⡯⣞⡾⣽⣺⢽⣳⢯⡯⡯⡏⠀⢱⢱⢱⢱⢱⠱⢐⢑⠸⡨⡪⡂⡢⡣⡁⣕⢝⠸⠨⢘⠆⢂⢣⠁⢮⣳⡣⢂⠽⣕⢇⢯⣫⣳⡳⢸⠱",
+"⣯⢮⡺⣜⢮⡫⡯⣺⡺⣽⣺⢷⣻⢽⣺⢽⢽⣺⢾⢽⣳⡯⡷⣝⣗⡯⣯⢯⠫⠐⠈⠀⠑⡕⡕⡕⡅⡑⢌⢆⡊⠢⢡⢪⢊⠢⡱⡑⡅⢍⠢⢁⢢⢨⠨⢂⢳⢝⠔⡘⡮⡳⡘⣜⢮⢮⢊⠅",
+"⣿⢷⣝⡮⡳⣕⢝⢮⡺⣺⣪⡻⣮⡻⡮⣯⡳⡽⡽⣽⣺⣟⣿⣯⢿⡯⡋⠂⠐⠀⠂⠈⢀⠈⢎⢎⢂⢊⢆⢕⢜⢌⢔⢕⢱⠡⠃⡇⢲⣎⢎⢢⣽⣳⡱⢈⢆⢝⢌⠢⢹⡳⡑⢜⢽⢵⢅⢃",
+"⡯⡿⣽⢯⣟⢮⣫⡳⣝⣞⣞⣞⢮⢯⢯⢮⢯⢯⣻⣺⣺⣞⣗⡯⢋⠐⠀⢈⠀⢁⠀⢁⠀⡀⠄⠣⠀⠄⠃⢇⢇⢇⢪⢢⠣⠁⡠⡬⣗⢗⢕⢟⢞⡵⡬⡮⡷⣕⢌⢎⢢⠹⣕⠄⢣⢫⢧⠅",
+"⡯⡻⣮⡻⣮⣻⡺⣝⣞⣞⣞⢮⢯⢯⢯⢯⢯⣳⣳⣳⣗⡗⠇⠂⠄⠐⠈⠀⢀⠠⠀⠄⠀⡀⠀⠄⠐⠀⠠⠀⢁⢣⣱⢥⣖⡽⡽⡽⡽⡔⣵⡫⣟⡾⡽⡽⡽⡽⡽⣮⢪⠪⡌⡎⡢⠡⢓⢕"
+    };
+    int prof_lines = sizeof(prof) / sizeof(prof[0]);
+
+    // Braille 문자는 UTF-8 3바이트 / 화면 폭 1칸씩 (모노스페이스)
+    // 한 줄당 68글자 = 약 68칸 폭
+    int line_w = 68;
+    int pad = (term_w - line_w) / 2;
+    if (pad < 0) pad = 0;
+
+    // 흰색으로 출력 (Braille은 회색이면 거의 안 보임)
+    printf(WHITE);
+    for (int i = 0; i < prof_lines; i++) {
+        for (int j = 0; j < pad; j++) printf(" ");
+        printf("%s\n", prof[i]);
+        Sleep(40);   // 위에서 아래로 차례로 등장
+    }
+    printf(RESET);
+}
+
 void blink_print(const char* text, int term_w, int display_width) {
     int pad = (term_w - display_width) / 2;
     if (pad < 0) pad = 0;
@@ -224,7 +279,8 @@ void type_box_line_kr(const char* text, int term_w, int box_w, int display_width
             putchar(text[i]); i++;
             fflush(stdout);
             if (!skipped) Sleep(TYPE_DELAY);
-        } else {
+        }
+        else {
             if (!skipped) {
                 if (is_punct(text[i])) Sleep(TYPE_DELAY_SLOW);
                 else Sleep(TYPE_DELAY);
@@ -263,7 +319,7 @@ void draw_hp_bar(int term_w) {
     // 첫 번째 줄: 이름 (학번) - 가운데 정렬
     char name_line[80];
     sprintf(name_line, "%s ( %s )", player_name, player_id);
-    
+
     // 표시 폭 계산 (한글 2, 영문/숫자 1)
     int name_w = 0;
     for (int i = 0; name_line[i]; i++) {
@@ -271,7 +327,7 @@ void draw_hp_bar(int term_w) {
         if (c >= 0xE0) { name_w += 2; i += 2; }
         else name_w += 1;
     }
-    
+
     int pad1 = (term_w - name_w) / 2;
     if (pad1 < 0) pad1 = 0;
     for (int i = 0; i < pad1; i++) printf(" ");
@@ -294,11 +350,12 @@ void draw_hp_bar(int term_w) {
     printf(YELLOW " %d/100" RESET, player_hp);
     printf(WHITE "   학점: " RESET);
     printf(GREEN "%d" RESET, player_score);
-    
+
     // 족보 보유 표시
     if (has_jokbo && !jokbo_used) {
         printf(CYAN "   [족보]" RESET);
-    } else if (has_jokbo && jokbo_used) {
+    }
+    else if (has_jokbo && jokbo_used) {
         printf(GRAY "   [족보:사용됨]" RESET);
     }
     printf("\n");
@@ -375,7 +432,8 @@ void show_text_box(const char* lines[], int widths[], int line_count, int term_w
                 putchar(text[idx]); idx++;
                 fflush(stdout);
                 if (!skipped) Sleep(TYPE_DELAY);
-            } else {
+            }
+            else {
                 if (!skipped) {
                     if (is_punct(text[idx])) Sleep(TYPE_DELAY_SLOW);
                     else Sleep(TYPE_DELAY);
@@ -404,7 +462,8 @@ void show_text_box_instant(const char* lines[], int widths[], int line_count, in
     for (int i = 0; i < line_count; i++) {
         if (widths[i] == 0) {
             draw_box_empty(term_w, box_w);
-        } else {
+        }
+        else {
             draw_box_line_kr(lines[i], term_w, box_w, widths[i]);
         }
     }
@@ -443,7 +502,8 @@ void show_choice_box_full(const char* choices[], int widths[], int selected, int
             if (idx == selected) {
                 printf(YELLOW "> " RESET);
                 used += 2;
-            } else {
+            }
+            else {
                 printf("  ");
                 used += 2;
             }
@@ -451,9 +511,11 @@ void show_choice_box_full(const char* choices[], int widths[], int selected, int
             if (correct_idx >= 0 && idx == correct_idx) {
                 // 정답 - 초록색 강조 (족보 사용)
                 printf(GREEN "%s" RESET, choices[idx]);
-            } else if (idx == selected) {
+            }
+            else if (idx == selected) {
                 printf(YELLOW "%s" RESET, choices[idx]);
-            } else {
+            }
+            else {
                 printf(WHITE "%s" RESET, choices[idx]);
             }
             used += widths[idx];
@@ -575,7 +637,7 @@ void player_setup() {
     if (pad < 0) pad = 0;
     for (int i = 0; i < pad; i++) printf(" ");
     printf(CYAN "이름 학번 >> " RESET);
-    
+
     // 학번이 정확히 8자리가 될 때까지 재입력 받기
     while (1) {
         if (scanf("%31s %8s", player_name, player_id) == 2) {
@@ -587,12 +649,13 @@ void player_setup() {
                 id_len++;
             }
             while (getchar() != '\n');  // 버퍼 비우기
-            
+
             if (id_len == 8 && is_valid) break;  // 유효한 입력
-        } else {
+        }
+        else {
             while (getchar() != '\n');
         }
-        
+
         // 잘못된 입력
         for (int i = 0; i < pad; i++) printf(" ");
         printf(RED "다시 입력 >> " RESET);
@@ -649,7 +712,7 @@ void stage1() {
         "",
         GRAY "* (술을 제량껏 마셔야겠다...)" RESET
     };
-    int intro_widths[] = {18, 42, 0, 26, 0, 28};
+    int intro_widths[] = { 18, 42, 0, 26, 0, 28 };
 
     show_text_box(intro_lines, intro_widths, 6, W);
     printf("\n");
@@ -671,7 +734,7 @@ void stage1() {
         "선배들과 끝까지",
         "얼굴도장만"
     };
-    int choice_widths[] = {10, 12, 15, 10};
+    int choice_widths[] = { 10, 12, 15, 10 };
 
     while (1) {
         clear_screen_with_padding(top);
@@ -684,7 +747,7 @@ void stage1() {
         const char* prompt_lines[] = {
             "* 어디까지 갈 것인가?"
         };
-        int prompt_widths[] = {21};
+        int prompt_widths[] = { 21 };
         show_text_box_instant(prompt_lines, prompt_widths, 1, W);
         printf("\n");
 
@@ -723,27 +786,27 @@ void stage1() {
     int got_jokbo = 0;
 
     switch (selected) {
-        case 0:
-            result_msg = YELLOW "* 1차만 깔끔하게 마치고 귀가했다." RESET;
-            result_msg_w = 33;
-            hp_change = 0; score_change = 0;
-            break;
-        case 1:
-            result_msg = YELLOW "* 2차까지 갔다. 머리가 좀 아프지만 살만하다." RESET;
-            result_msg_w = 44;
-            hp_change = -15; score_change = 0;
-            break;
-        case 2:
-            result_msg = YELLOW "* 선배들과 끝까지 마셨다! 족보를 얻었다!" RESET;
-            result_msg_w = 40;
-            hp_change = -40; score_change = 0;
-            got_jokbo = 1;
-            break;
-        case 3:
-            result_msg = YELLOW "* 도망가려다 잡혀버렸다. 술자리가 끝장났다..." RESET;
-            result_msg_w = 45;
-            hp_change = -50; score_change = 0;
-            break;
+    case 0:
+        result_msg = YELLOW "* 1차만 깔끔하게 마치고 귀가했다." RESET;
+        result_msg_w = 33;
+        hp_change = 0; score_change = 0;
+        break;
+    case 1:
+        result_msg = YELLOW "* 2차까지 갔다. 머리가 좀 아프지만 살만하다." RESET;
+        result_msg_w = 44;
+        hp_change = -15; score_change = 0;
+        break;
+    case 2:
+        result_msg = YELLOW "* 선배들과 끝까지 마셨다! 족보를 얻었다!" RESET;
+        result_msg_w = 40;
+        hp_change = -40; score_change = 0;
+        got_jokbo = 1;
+        break;
+    case 3:
+        result_msg = YELLOW "* 도망가려다 잡혀버렸다. 술자리가 끝장났다..." RESET;
+        result_msg_w = 45;
+        hp_change = -50; score_change = 0;
+        break;
     }
 
     char hp_line[64];
@@ -802,11 +865,22 @@ void stage2() {
     int top = (H - 22) / 2;
     if (top < 0) top = 0;
 
-    // ===== 0단계: 긴장감 조성 (깜빡임만) =====
-    clear_screen_with_padding(top + 8);
-    Sleep(500);
+    // ===== 0단계: 교수님 등장 + 긴장감 조성 =====
+    system("cls");
+    Sleep(300);
+
+    // 화면 가운데 정렬을 위한 위쪽 여백 (아트 32줄 + 메시지)
+    int prof_top = (H - 35) / 2;
+    if (prof_top < 0) prof_top = 0;
+    for (int i = 0; i < prof_top; i++) printf("\n");
+
+    // 교수님 아스키 아트 출력
+    show_professor_ascii(W);
+
+    Sleep(800);
+    printf("\n");
     blink_print(RED "* 교수님이 당신을 노려본다." RESET, W, 24);
-    Sleep(700);
+    Sleep(900);
 
     // ===== 1단계: 상황 묘사 =====
     clear_screen_with_padding(top);
@@ -824,7 +898,7 @@ void stage2() {
         "",
         GRAY "* (준비한 것은 없다. 인생도 없다.)" RESET
     };
-    int intro_widths[] = {43, 32, 0, 44, 0, 34};
+    int intro_widths[] = { 43, 32, 0, 44, 0, 34 };
 
     show_text_box(intro_lines, intro_widths, 6, W);
     printf("\n");
@@ -846,7 +920,7 @@ void stage2() {
         "못 들은 척",
         "솔직하게"
     };
-    int choice_widths[] = {11, 11, 10, 8};
+    int choice_widths[] = { 11, 11, 10, 8 };
 
     // 선택지 화면 - 상황 부여 끝났으니 즉시 출력
     while (1) {
@@ -860,7 +934,7 @@ void stage2() {
         const char* prompt_lines[] = {
             "* 어떻게 할 것인가?"
         };
-        int prompt_widths[] = {19};
+        int prompt_widths[] = { 19 };
 
         // 선택지 화면은 항상 즉시 출력
         show_text_box_instant(prompt_lines, prompt_widths, 1, W);
@@ -900,26 +974,26 @@ void stage2() {
     int score_change = 0;
 
     switch (selected) {
-        case 0:
-            result_msg = YELLOW "* 식은땀을 흘리며 나갔지만... 의외로 잘 넘겼다!" RESET;
-            result_msg_w = 47;
-            hp_change = -20; score_change = 30;
-            break;
-        case 1:
-            result_msg = YELLOW "* 화장실에서 10분을 버텼다. 잠깐 살았다..." RESET;
-            result_msg_w = 42;
-            hp_change = 10; score_change = -10;
-            break;
-        case 2:
-            result_msg = YELLOW "* 교수: \"거기, 핸드폰 그만보고 나와봐요.\"" RESET;
-            result_msg_w = 41;
-            hp_change = -10; score_change = -20;
-            break;
-        case 3:
-            result_msg = YELLOW "* 솔직함을 높이 산 교수님이 가산점을 줬다!" RESET;
-            result_msg_w = 42;
-            hp_change = -30; score_change = 40;
-            break;
+    case 0:
+        result_msg = YELLOW "* 식은땀을 흘리며 나갔지만... 의외로 잘 넘겼다!" RESET;
+        result_msg_w = 47;
+        hp_change = -20; score_change = 30;
+        break;
+    case 1:
+        result_msg = YELLOW "* 화장실에서 10분을 버텼다. 잠깐 살았다..." RESET;
+        result_msg_w = 42;
+        hp_change = 10; score_change = -10;
+        break;
+    case 2:
+        result_msg = YELLOW "* 교수: \"거기, 핸드폰 그만보고 나와봐요.\"" RESET;
+        result_msg_w = 41;
+        hp_change = -10; score_change = -20;
+        break;
+    case 3:
+        result_msg = YELLOW "* 솔직함을 높이 산 교수님이 가산점을 줬다!" RESET;
+        result_msg_w = 42;
+        hp_change = -30; score_change = 40;
+        break;
     }
 
     char hp_line[64];
@@ -940,7 +1014,7 @@ void stage2() {
         hp_line,
         score_line
     };
-    int result_widths[] = {result_msg_w, 0, 10, 14};
+    int result_widths[] = { result_msg_w, 0, 10, 14 };
     show_text_box(result_lines, result_widths, 4, W);
 
     // 실제 적용
@@ -972,7 +1046,7 @@ void stage2() {
 // ===== 시험 문제 하나 출제 =====
 // 정답 인덱스를 받아서, 맞으면 1 반환
 int ask_question(const char* title, const char* question_lines[], int question_widths[], int q_line_count,
-                 const char* choices[], int choice_widths[], int correct_idx) {
+    const char* choices[], int choice_widths[], int correct_idx) {
     int W = get_terminal_width();
     int H = get_terminal_height();
     int top = (H - 24) / 2;
@@ -1007,7 +1081,8 @@ int ask_question(const char* title, const char* question_lines[], int question_w
             printf(CYAN);
             print_centered_kr("[ J 키: 족보 사용하기 (1회 한정) ]", W, 36);
             printf(RESET);
-        } else if (jokbo_used_here) {
+        }
+        else if (jokbo_used_here) {
             printf(GREEN);
             print_centered_kr("[ 족보가 정답을 알려준다! ]", W, 28);
             printf(RESET);
@@ -1045,7 +1120,8 @@ int ask_question(const char* title, const char* question_lines[], int question_w
         printf(GREEN);
         blink_print(GREEN "* 정답이다!" RESET, W, 12);
         printf(RESET);
-    } else {
+    }
+    else {
         printf(RED);
         blink_print(RED "* 오답이다..." RESET, W, 14);
         printf(RESET);
@@ -1098,7 +1174,7 @@ void stage3() {
         "",
         GRAY "* (총 3문제. 맞춰야 학점이 안 깎인다.)" RESET
     };
-    int intro_widths[] = {16, 28, 0, 14, 0, 38};
+    int intro_widths[] = { 16, 28, 0, 14, 0, 38 };
 
     show_text_box(intro_lines, intro_widths, 6, W);
     printf("\n");
@@ -1116,15 +1192,16 @@ void stage3() {
     const char* q1_lines[] = {
         "* 다음 중 올바른 헤더 파일은?"
     };
-    int q1_widths[] = {28};
+    int q1_widths[] = { 28 };
     const char* q1_choices[] = {
         "studio.h", "stdio.h", "stido.h", "stdoi.h"
     };
-    int q1_choice_widths[] = {8, 7, 7, 7};
+    int q1_choice_widths[] = { 8, 7, 7, 7 };
     if (ask_question("[ 문제 1 / 3 - 헤더 파일 ]", q1_lines, q1_widths, 1,
-                     q1_choices, q1_choice_widths, 1)) {
+        q1_choices, q1_choice_widths, 1)) {
         correct_count++;
-    } else {
+    }
+    else {
         player_score -= 15;
     }
 
@@ -1132,18 +1209,19 @@ void stage3() {
     const char* q2_lines[] = {
         "* GitHub에 업로드하는 올바른 순서는?"
     };
-    int q2_widths[] = {36};
+    int q2_widths[] = { 36 };
     const char* q2_choices[] = {
         "add -> push -> commit",
         "commit -> add -> push",
         "add -> commit -> push",
         "push -> commit -> add"
     };
-    int q2_choice_widths[] = {21, 21, 21, 21};
+    int q2_choice_widths[] = { 21, 21, 21, 21 };
     if (ask_question("[ 문제 2 / 3 - GitHub 업로드 ]", q2_lines, q2_widths, 1,
-                     q2_choices, q2_choice_widths, 2)) {
+        q2_choices, q2_choice_widths, 2)) {
         correct_count++;
-    } else {
+    }
+    else {
         player_score -= 15;
     }
 
@@ -1151,18 +1229,19 @@ void stage3() {
     const char* q3_lines[] = {
         "* scanf와 _getch의 차이로 옳은 것은?"
     };
-    int q3_widths[] = {36};
+    int q3_widths[] = { 36 };
     const char* q3_choices[] = {
         "scanf는 즉시 입력",
         "_getch는 엔터 필요",
         "_getch는 즉시 입력",
         "둘 다 동일하다"
     };
-    int q3_choice_widths[] = {15, 17, 17, 13};
+    int q3_choice_widths[] = { 15, 17, 17, 13 };
     if (ask_question("[ 문제 3 / 3 - 입력 함수 ]", q3_lines, q3_widths, 1,
-                     q3_choices, q3_choice_widths, 2)) {
+        q3_choices, q3_choice_widths, 2)) {
         correct_count++;
-    } else {
+    }
+    else {
         player_score -= 15;
     }
 
@@ -1194,13 +1273,16 @@ void stage3() {
     if (correct_count == 3) {
         final_lines[2] = GREEN "* 완벽하다! 학점 손실 없음!" RESET;
         final_widths[2] = 26;
-    } else if (correct_count == 2) {
+    }
+    else if (correct_count == 2) {
         final_lines[2] = YELLOW "* 한 문제 틀렸다. 학점 -15" RESET;
         final_widths[2] = 25;
-    } else if (correct_count == 1) {
+    }
+    else if (correct_count == 1) {
         final_lines[2] = RED "* 두 문제 틀렸다. 학점 -30" RESET;
         final_widths[2] = 26;
-    } else {
+    }
+    else {
         final_lines[2] = RED "* 다 틀렸다. 학점 -45" RESET;
         final_widths[2] = 21;
     }
@@ -1255,21 +1337,24 @@ void show_ending() {
         printf("\n");
         print_centered_kr("체력도 학점도 챙긴 당신!", W, 26);
         print_centered_kr("무사히 졸업합니다.", W, 18);
-    } else if (player_hp < 50 && player_score >= 50) {
+    }
+    else if (player_hp < 50 && player_score >= 50) {
         printf(YELLOW);
         print_centered_kr("[ BAD END: 대원가 ]", W, 21);
         printf(RESET);
         printf("\n");
         print_centered_kr("학점은 좋았지만 몸이 망가졌다.", W, 30);
         print_centered_kr("입대 통지서가 도착했다...", W, 26);
-    } else if (player_hp >= 50 && player_score < 50) {
+    }
+    else if (player_hp >= 50 && player_score < 50) {
         printf(CYAN);
         print_centered_kr("[ NORMAL END: 휴학 ]", W, 22);
         printf(RESET);
         printf("\n");
         print_centered_kr("몸은 멀쩡하지만 학점이 부족하다.", W, 32);
         print_centered_kr("일단 휴학하기로 했다.", W, 22);
-    } else {
+    }
+    else {
         printf(RED);
         print_centered_kr("[ WORST END: 제적 ]", W, 21);
         printf(RESET);
@@ -1421,14 +1506,14 @@ void show_team_info() {
     printf(RESET);
     printf("\n");
     print_centered_kr("기획 / 스토리   :  김바다", W, 26);
-    print_centered_kr("프론트 / UI     :  강민",   W, 25);
+    print_centered_kr("프론트 / UI     :  강민", W, 25);
     print_centered_kr("백엔드 / 시스템 :  김언국", W, 26);
     printf("\n");
     printf(CYAN);
     print_centered("================================", W);
     printf(RESET);
     printf("\n");
-    print_centered_kr("제작  :  2026",   W, 14);
+    print_centered_kr("제작  :  2026", W, 14);
     print_centered_kr("버전  :  ver 1.0", W, 17);
     printf("\n");
     printf(CYAN);
