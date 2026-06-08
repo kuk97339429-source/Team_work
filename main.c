@@ -638,9 +638,19 @@ void player_setup() {
     for (int i = 0; i < pad; i++) printf(" ");
     printf(CYAN "이름 학번 >> " RESET);
 
-    // 학번이 정확히 8자리가 될 때까지 재입력 받기
-    while (1) {
-        if (scanf("%31s %8s", player_name, player_id) == 2) {
+    // 학번이 정확히 8자리가 될 때까지 재입력 받기 (최대 10회 시도)
+    int attempts = 0;
+    while (attempts < 10) {
+        int scanf_result = scanf("%31s %8s", player_name, player_id);
+
+        // EOF나 입력 실패 시 기본값 사용하고 탈출
+        if (scanf_result == EOF) {
+            strcpy(player_name, "익명");
+            strcpy(player_id, "00000000");
+            break;
+        }
+
+        if (scanf_result == 2) {
             // 학번이 8자리이고 모두 숫자인지 확인
             int id_len = 0;
             int is_valid = 1;
@@ -653,12 +663,26 @@ void player_setup() {
             if (id_len == 8 && is_valid) break;  // 유효한 입력
         }
         else {
-            while (getchar() != '\n');
+            // 입력 버퍼 비우기 (EOF 아닌 경우)
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            if (c == EOF) {
+                strcpy(player_name, "익명");
+                strcpy(player_id, "00000000");
+                break;
+            }
         }
 
+        attempts++;
         // 잘못된 입력
         for (int i = 0; i < pad; i++) printf(" ");
         printf(RED "다시 입력 >> " RESET);
+    }
+
+    // 시도 초과 시 기본값
+    if (attempts >= 10) {
+        strcpy(player_name, "익명");
+        strcpy(player_id, "00000000");
     }
 
     printf("\n");
@@ -714,7 +738,7 @@ void stage1() {
     };
     int intro_widths[] = { 18, 42, 0, 26, 0, 28 };
 
-    show_text_box(intro_lines, intro_widths, 6, W);
+    show_text_box_instant(intro_lines, intro_widths, 6, W);
     printf("\n");
     draw_hp_bar(W);
     printf("\n");
@@ -832,7 +856,7 @@ void stage1() {
         line_count = 4;
     }
 
-    show_text_box(result_lines, result_widths, line_count, W);
+    show_text_box_instant(result_lines, result_widths, line_count, W);
 
     apply_result(hp_change, score_change);
     if (got_jokbo) has_jokbo = 1;
@@ -900,7 +924,7 @@ void stage2() {
     };
     int intro_widths[] = { 43, 32, 0, 44, 0, 34 };
 
-    show_text_box(intro_lines, intro_widths, 6, W);
+    show_text_box_instant(intro_lines, intro_widths, 6, W);
     printf("\n");
     draw_hp_bar(W);
     printf("\n");
@@ -1015,7 +1039,7 @@ void stage2() {
         score_line
     };
     int result_widths[] = { result_msg_w, 0, 10, 14 };
-    show_text_box(result_lines, result_widths, 4, W);
+    show_text_box_instant(result_lines, result_widths, 4, W);
 
     // 실제 적용
     apply_result(hp_change, score_change);
@@ -1176,7 +1200,7 @@ void stage3() {
     };
     int intro_widths[] = { 16, 28, 0, 14, 0, 38 };
 
-    show_text_box(intro_lines, intro_widths, 6, W);
+    show_text_box_instant(intro_lines, intro_widths, 6, W);
     printf("\n");
     draw_hp_bar(W);
     printf("\n");
@@ -1287,7 +1311,7 @@ void stage3() {
         final_widths[2] = 21;
     }
 
-    show_text_box(final_lines, final_widths, 3, W);
+    show_text_box_instant(final_lines, final_widths, 3, W);
 
     printf("\n");
     draw_hp_bar(W);
