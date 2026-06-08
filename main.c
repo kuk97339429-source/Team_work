@@ -632,49 +632,73 @@ void player_setup() {
     printf(RESET);
     printf("\n");
 
-    // === 이름과 학번 한 번에 입력 ===
     int pad = (W - 50) / 2;
     if (pad < 0) pad = 0;
     for (int i = 0; i < pad; i++) printf(" ");
     printf(CYAN "이름 학번 >> " RESET);
 
-    // 학번이 8~10자리 숫자가 될 때까지 재입력 (최대 10회 시도)
+    char input_buffer[100];
     int attempts = 0;
-    while (attempts < 10) {
-        // %10s로 최대 10자리까지 받기 (8자리 이상 입력 시 박스 깨짐 방지)
-        int scanf_result = scanf("%31s %10s", player_name, player_id);
 
-        // 입력 버퍼에 남은 문자 모두 비우기 (잔여 데이터 방지)
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF);
-
-        // EOF나 입력 실패 시 기본값 사용하고 탈출
-        if (scanf_result == EOF || c == EOF) {
+    while (attempts < 5) {
+        // 한 줄 전체 입력 받기
+        if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL) {
             strcpy(player_name, "익명");
             strcpy(player_id, "00000000");
             break;
         }
 
-        if (scanf_result == 2) {
-            // 학번이 8~10자리이고 모두 숫자인지 확인
-            int id_len = 0;
-            int is_valid = 1;
-            while (player_id[id_len]) {
-                if (player_id[id_len] < '0' || player_id[id_len] > '9') is_valid = 0;
-                id_len++;
-            }
+        // 개행 문자 제거
+        input_buffer[strcspn(input_buffer, "\n")] = '\0';
 
-            if (id_len >= 8 && id_len <= 10 && is_valid) break;  // 유효한 입력
+        // sscanf로 공백 기준 분리 시도
+        int token_count = sscanf(input_buffer, "%49s %19s", player_name, player_id);
+
+        // 1. 공백 구분을 안 한 경우 (토큰이 2개가 아님)
+        if (token_count < 2) {
+            attempts++;
+            for (int i = 0; i < pad; i++) printf(" ");
+            printf(RED "이름과 학번을 공백으로 구분해 입력해주세요 >> " RESET);
+            continue;
         }
 
-        attempts++;
-        // 잘못된 입력 안내
-        for (int i = 0; i < pad; i++) printf(" ");
-        printf(RED "학번은 8~10자리 숫자로 다시 입력 >> " RESET);
+        // 2. 이름에 숫자가 들어갔는지 검사
+        int has_digit_in_name = 0;
+        for (int i = 0; player_name[i]; i++) {
+            if (player_name[i] >= '0' && player_name[i] <= '9') {
+                has_digit_in_name = 1;
+                break;
+            }
+        }
+
+        if (has_digit_in_name) {
+            attempts++;
+            for (int i = 0; i < pad; i++) printf(" ");
+            printf(RED "이름에 숫자가 포함될 수 없습니다. 다시 입력 >> " RESET);
+            continue;
+        }
+
+        // 3. 학번 유효성 검사 (8~10자리 숫자)
+        int id_len = 0;
+        int is_id_valid = 1;
+        while (player_id[id_len]) {
+            if (player_id[id_len] < '0' || player_id[id_len] > '9') is_id_valid = 0;
+            id_len++;
+        }
+
+        if (id_len < 8 || id_len > 10 || !is_id_valid) {
+            attempts++;
+            for (int i = 0; i < pad; i++) printf(" ");
+            printf(RED "학번은 8~10자리 숫자로 다시 입력 >> " RESET);
+            continue;
+        }
+
+        // 모든 조건 만족 시 루프 탈출
+        break;
     }
 
-    // 시도 초과 시 기본값
-    if (attempts >= 10) {
+    // 시도 초과 시 기본값 세팅
+    if (attempts >= 5) {
         strcpy(player_name, "익명");
         strcpy(player_id, "00000000");
     }
