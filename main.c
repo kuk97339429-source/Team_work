@@ -1569,7 +1569,7 @@ void show_team_info() {
     print_centered("================================", W);
     printf(RESET);
     printf("\n");
-    print_centered_kr("팀명   :  미정", W, 14);
+    print_centered_kr("팀명   :  늙탱이들", W, 14);
     printf("\n");
     printf(YELLOW);
     print_centered_kr("[ 팀원 ]", W, 8);
