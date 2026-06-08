@@ -1410,7 +1410,7 @@ void show_ending() {
     }
     else if (player_hp < 50 && player_score >= 50) {
         printf(YELLOW);
-        print_centered_kr("[ BAD END: 대원가 ]", W, 19);
+        print_centered_kr("[ BAD END: 대학원 납치 ]", W, 19);
         printf(RESET);
         printf("\n");
         print_centered_kr("학점은 좋았지만 몸이 망가졌다.", W, 30);
