@@ -561,7 +561,7 @@ void input_player_info() {
 
     printf(CYAN);
     print_centered("========================================", W);
-    print_centered_kr("       [ 학생 정보를 입력하세요 ]       ", W, 38);
+    print_centered_kr("       [ 학생 정보를 입력하세요 ]       ", W, 40);
     print_centered("========================================", W);
     printf(RESET);
     printf("\n");
@@ -624,11 +624,11 @@ void player_setup() {
     printf(RESET);
     printf("\n");
 
-    print_centered_kr("학교에서 당신을 기록합니다.", W, 28);
-    print_centered_kr("이름과 학번(8~10자리)을 공백으로 구분해 입력하세요.", W, 52);
+    print_centered_kr("학교에서 당신을 기록합니다.", W, 27);
+    print_centered_kr("이름과 학번(8~10자리)을 공백으로 구분해 입력하세요.", W, 51);
     printf("\n");
     printf(GRAY);
-    print_centered_kr("(예: 김바다 20241947  또는  Kim 20241947)", W, 42);
+    print_centered_kr("(예: 김바다 20241947  또는  Kim 20241947)", W, 41);
     printf(RESET);
     printf("\n");
 
@@ -678,6 +678,32 @@ void player_setup() {
             continue;
         }
 
+        // 2-1. 이름 글자 수 검사 (한글 4자 또는 영문 8자 이하)
+        int name_char_count = 0;
+        int name_too_long = 0;
+        for (int i = 0; player_name[i]; ) {
+            unsigned char c = (unsigned char)player_name[i];
+            if (c >= 0xE0) {
+                // 한글 (UTF-8 3바이트)
+                name_char_count++;
+                i += 3;
+                if (name_char_count > 4) { name_too_long = 1; break; }
+            }
+            else {
+                // 영문/숫자 등 1바이트
+                name_char_count++;
+                i++;
+                if (name_char_count > 8) { name_too_long = 1; break; }
+            }
+        }
+
+        if (name_too_long) {
+            attempts++;
+            for (int i = 0; i < pad; i++) printf(" ");
+            printf(RED "이름이 너무 깁니다 (한글 4자 / 영문 8자 이하). 다시 입력 >> " RESET);
+            continue;
+        }
+
         // 3. 학번 유효성 검사 (8~10자리 숫자)
         int id_len = 0;
         int is_id_valid = 1;
@@ -720,7 +746,7 @@ void player_setup() {
     printf(GREEN "%s" RESET "\n", welcome);
 
     printf("\n");
-    print_centered_kr("[ 엔터를 눌러 수업에 들어가기 ]", W, 32);
+    print_centered_kr("[ 엔터를 눌러 수업에 들어가기 ]", W, 31);
 
     while (_getch() != KEY_ENTER);
 }
@@ -756,12 +782,12 @@ void stage1() {
     };
     int intro_widths[] = { 26, 44, 0, 29, 0, 29 };
 
-    show_text_box_instant(intro_lines, intro_widths, 6, W);
+    show_text_box(intro_lines, intro_widths, 6, W);
     printf("\n");
     draw_hp_bar(W);
     printf("\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 20);
     printf(RESET);
 
     while (_getch() != KEY_ENTER);
@@ -799,7 +825,7 @@ void stage1() {
         draw_hp_bar(W);
         printf("\n");
         printf(GRAY);
-        print_centered_kr("[ 방향키로 이동    엔터로 선택 ]", W, 34);
+        print_centered_kr("[ 방향키로 이동    엔터로 선택 ]", W, 32);
         printf(RESET);
 
         key = _getch();
@@ -866,15 +892,15 @@ void stage1() {
     result_lines[1] = "";
     result_widths[1] = 0;
     result_lines[2] = hp_line;
-    result_widths[2] = (hp_change < 0) ? 10 : 14;
+    result_widths[2] = (hp_change < 0) ? 8 : 14;
 
     if (got_jokbo) {
         result_lines[3] = CYAN "* 족보 획득! (시험에서 1회 사용 가능)" RESET;
-        result_widths[3] = 36;
+        result_widths[3] = 37;
         line_count = 4;
     }
 
-    show_text_box_instant(result_lines, result_widths, line_count, W);
+    show_text_box(result_lines, result_widths, line_count, W);
 
     apply_result(hp_change, score_change);
     if (got_jokbo) has_jokbo = 1;
@@ -883,7 +909,7 @@ void stage1() {
     draw_hp_bar(W);
     printf("\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 20);
     printf(RESET);
 
     while (_getch() != KEY_ENTER);
@@ -892,10 +918,10 @@ void stage1() {
     clear_screen_with_padding(H / 2 - 3);
     blink_print(CYAN "STAGE 1 클리어!" RESET, W, 17);
     printf("\n");
-    print_centered_kr("내일은 첫 수업이다...", W, 22);
+    print_centered_kr("내일은 첫 수업이다...", W, 21);
     printf("\n\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 다음 스테이지 ]", W, 30);
+    print_centered_kr("[ 엔터를 눌러 다음 스테이지 ]", W, 29);
     printf(RESET);
     while (_getch() != KEY_ENTER);
 }
@@ -928,7 +954,7 @@ void stage2() {
     clear_screen_with_padding(top);
 
     printf(YELLOW);
-    print_centered_kr("[ STAGE 2 - 갑작스러운 발표 지목 ]", W, 36);
+    print_centered_kr("[ STAGE 2 - 갑작스러운 발표 지목 ]", W, 34);
     printf(RESET);
     printf("\n");
 
@@ -942,12 +968,12 @@ void stage2() {
     };
     int intro_widths[] = { 43, 32, 0, 44, 0, 34 };
 
-    show_text_box_instant(intro_lines, intro_widths, 6, W);
+    show_text_box(intro_lines, intro_widths, 6, W);
     printf("\n");
     draw_hp_bar(W);
     printf("\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 20);
     printf(RESET);
 
     while (_getch() != KEY_ENTER);
@@ -969,7 +995,7 @@ void stage2() {
         clear_screen_with_padding(top);
 
         printf(YELLOW);
-        print_centered_kr("[ STAGE 2 - 갑작스러운 발표 지목 ]", W, 36);
+        print_centered_kr("[ STAGE 2 - 갑작스러운 발표 지목 ]", W, 34);
         printf(RESET);
         printf("\n");
 
@@ -988,7 +1014,7 @@ void stage2() {
         draw_hp_bar(W);
         printf("\n");
         printf(GRAY);
-        print_centered_kr("[ 방향키로 이동    엔터로 선택 ]", W, 34);
+        print_centered_kr("[ 방향키로 이동    엔터로 선택 ]", W, 32);
         printf(RESET);
 
         key = _getch();
@@ -1056,8 +1082,10 @@ void stage2() {
         hp_line,
         score_line
     };
-    int result_widths[] = { result_msg_w, 0, 10, 14 };
-    show_text_box_instant(result_lines, result_widths, 4, W);
+    int hp_w = (hp_change < 0) ? 8 : 14;
+    int score_w = (score_change > 0) ? 16 : 10;
+    int result_widths[] = { result_msg_w, 0, hp_w, score_w };
+    show_text_box(result_lines, result_widths, 4, W);
 
     // 실제 적용
     apply_result(hp_change, score_change);
@@ -1066,7 +1094,7 @@ void stage2() {
     draw_hp_bar(W);
     printf("\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 20);
     printf(RESET);
 
     while (_getch() != KEY_ENTER);
@@ -1080,7 +1108,7 @@ void stage2() {
     print_centered_kr("중간고사가 다가온다...", W, 22);
     printf("\n\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 돌아가기 ]", W, 26);
+    print_centered_kr("[ 엔터를 눌러 돌아가기 ]", W, 24);
     printf(RESET);
     while (_getch() != KEY_ENTER);
 }
@@ -1121,16 +1149,16 @@ int ask_question(const char* title, const char* question_lines[], int question_w
         // 족보 사용 가능 안내
         if (has_jokbo && !jokbo_used) {
             printf(CYAN);
-            print_centered_kr("[ J 키: 족보 사용하기 (1회 한정) ]", W, 36);
+            print_centered_kr("[ J 키: 족보 사용하기 (1회 한정) ]", W, 34);
             printf(RESET);
         }
         else if (jokbo_used_here) {
             printf(GREEN);
-            print_centered_kr("[ 족보가 정답을 알려준다! ]", W, 28);
+            print_centered_kr("[ 족보가 정답을 알려준다! ]", W, 27);
             printf(RESET);
         }
         printf(GRAY);
-        print_centered_kr("[ 방향키로 이동    엔터로 선택 ]", W, 34);
+        print_centered_kr("[ 방향키로 이동    엔터로 선택 ]", W, 32);
         printf(RESET);
 
         key = _getch();
@@ -1180,7 +1208,7 @@ int ask_question(const char* title, const char* question_lines[], int question_w
     }
     printf("\n\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 20);
     printf(RESET);
     while (_getch() != KEY_ENTER);
 
@@ -1216,14 +1244,14 @@ void stage3() {
         "",
         GRAY "* (총 3문제. 맞춰야 학점이 안 깎인다.)" RESET
     };
-    int intro_widths[] = { 16, 28, 0, 14, 0, 38 };
+    int intro_widths[] = { 25, 34, 0, 15, 0, 38 };
 
-    show_text_box_instant(intro_lines, intro_widths, 6, W);
+    show_text_box(intro_lines, intro_widths, 6, W);
     printf("\n");
     draw_hp_bar(W);
     printf("\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 시험 시작 ]", W, 26);
+    print_centered_kr("[ 엔터를 눌러 시험 시작 ]", W, 25);
     printf(RESET);
 
     while (_getch() != KEY_ENTER);
@@ -1234,7 +1262,7 @@ void stage3() {
     const char* q1_lines[] = {
         "* 다음 중 올바른 헤더 파일은?"
     };
-    int q1_widths[] = { 28 };
+    int q1_widths[] = { 29 };
     const char* q1_choices[] = {
         "studio.h", "stdio.h", "stido.h", "stdoi.h"
     };
@@ -1291,7 +1319,7 @@ void stage3() {
     clear_screen_with_padding(top);
 
     printf(YELLOW);
-    print_centered_kr("[ 중간고사 결과 ]", W, 18);
+    print_centered_kr("[ 중간고사 결과 ]", W, 17);
     printf(RESET);
     printf("\n");
 
@@ -1314,11 +1342,11 @@ void stage3() {
 
     if (correct_count == 3) {
         final_lines[2] = GREEN "* 완벽하다! 학점 손실 없음!" RESET;
-        final_widths[2] = 26;
+        final_widths[2] = 27;
     }
     else if (correct_count == 2) {
         final_lines[2] = YELLOW "* 한 문제 틀렸다. 학점 -15" RESET;
-        final_widths[2] = 25;
+        final_widths[2] = 26;
     }
     else if (correct_count == 1) {
         final_lines[2] = RED "* 두 문제 틀렸다. 학점 -30" RESET;
@@ -1329,13 +1357,13 @@ void stage3() {
         final_widths[2] = 21;
     }
 
-    show_text_box_instant(final_lines, final_widths, 3, W);
+    show_text_box(final_lines, final_widths, 3, W);
 
     printf("\n");
     draw_hp_bar(W);
     printf("\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 22);
+    print_centered_kr("[ 엔터를 눌러 계속 ]", W, 20);
     printf(RESET);
     while (_getch() != KEY_ENTER);
 
@@ -1343,10 +1371,10 @@ void stage3() {
     clear_screen_with_padding(H / 2 - 3);
     blink_print(CYAN "STAGE 3 클리어!" RESET, W, 17);
     printf("\n");
-    print_centered_kr("한 학기가 끝났다...", W, 20);
+    print_centered_kr("한 학기가 끝났다...", W, 19);
     printf("\n\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 결과 확인 ]", W, 26);
+    print_centered_kr("[ 엔터를 눌러 결과 확인 ]", W, 25);
     printf(RESET);
     while (_getch() != KEY_ENTER);
 }
@@ -1374,40 +1402,40 @@ void show_ending() {
     // 엔딩 분기
     if (player_hp >= 50 && player_score >= 50) {
         printf(GREEN);
-        print_centered_kr("[ TRUE END: 졸업 ]", W, 20);
+        print_centered_kr("[ TRUE END: 졸업 ]", W, 18);
         printf(RESET);
         printf("\n");
-        print_centered_kr("체력도 학점도 챙긴 당신!", W, 26);
+        print_centered_kr("체력도 학점도 챙긴 당신!", W, 24);
         print_centered_kr("무사히 졸업합니다.", W, 18);
     }
     else if (player_hp < 50 && player_score >= 50) {
         printf(YELLOW);
-        print_centered_kr("[ BAD END: 대원가 ]", W, 21);
+        print_centered_kr("[ BAD END: 대원가 ]", W, 19);
         printf(RESET);
         printf("\n");
         print_centered_kr("학점은 좋았지만 몸이 망가졌다.", W, 30);
-        print_centered_kr("입대 통지서가 도착했다...", W, 26);
+        print_centered_kr("입대 통지서가 도착했다...", W, 25);
     }
     else if (player_hp >= 50 && player_score < 50) {
         printf(CYAN);
-        print_centered_kr("[ NORMAL END: 휴학 ]", W, 22);
+        print_centered_kr("[ NORMAL END: 휴학 ]", W, 20);
         printf(RESET);
         printf("\n");
         print_centered_kr("몸은 멀쩡하지만 학점이 부족하다.", W, 32);
-        print_centered_kr("일단 휴학하기로 했다.", W, 22);
+        print_centered_kr("일단 휴학하기로 했다.", W, 21);
     }
     else {
         printf(RED);
-        print_centered_kr("[ WORST END: 제적 ]", W, 21);
+        print_centered_kr("[ WORST END: 제적 ]", W, 19);
         printf(RESET);
         printf("\n");
-        print_centered_kr("체력도, 학점도 모두 잃었다...", W, 30);
+        print_centered_kr("체력도, 학점도 모두 잃었다...", W, 29);
         print_centered_kr("학교를 떠나야 할 시간이다.", W, 26);
     }
 
     printf("\n\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 눌러 타이틀로 ]", W, 26);
+    print_centered_kr("[ 엔터를 눌러 타이틀로 ]", W, 24);
     printf(RESET);
     while (_getch() != KEY_ENTER);
 }
@@ -1476,10 +1504,10 @@ void show_title(int selected) {
     print_centered("================================================================", W);
     printf(RESET);
     printf("\n");
-    print_centered_kr("체력이 높으면 졸업  /  낮으면 대원가        ver 1.0", W, 50);
+    print_centered_kr("체력이 높으면 졸업  /  낮으면 대원가        ver 1.0", W, 51);
     printf("\n\n");
     printf(GREEN);
-    print_centered_kr("[ 화살표 위/아래 = 이동    엔터 = 선택 ]", W, 42);
+    print_centered_kr("[ 화살표 위/아래 = 이동    엔터 = 선택 ]", W, 40);
     printf(RESET);
 }
 
@@ -1487,7 +1515,7 @@ void pause_game_simple() {
     int W = get_terminal_width();
     printf("\n");
     printf(GREEN);
-    print_centered_kr("[ 엔터를 누르면 돌아가기 ]", W, 28);
+    print_centered_kr("[ 엔터를 누르면 돌아가기 ]", W, 26);
     printf(RESET);
     while (_getch() != KEY_ENTER);
 }
@@ -1501,26 +1529,26 @@ void show_play_info() {
     for (int i = 0; i < top; i++) printf("\n");
     printf(CYAN);
     print_centered("================================", W);
-    print_centered_kr("       [ 플레이 소개 ]         ", W, 32);
+    print_centered_kr("       [ 플레이 소개 ]         ", W, 31);
     print_centered("================================", W);
     printf(RESET);
     printf("\n");
-    print_centered_kr("장르   : 텍스트 기반 턴제 게임", W, 31);
-    print_centered_kr("목표   : 교수님과의 싸움에서 살아남기", W, 38);
+    print_centered_kr("장르   : 텍스트 기반 턴제 게임", W, 30);
+    print_centered_kr("목표   : 교수님과의 싸움에서 살아남기", W, 37);
     printf("\n");
     printf(YELLOW);
-    print_centered_kr("[ 핵심 규칙 ]", W, 14);
+    print_centered_kr("[ 핵심 규칙 ]", W, 13);
     printf(RESET);
     printf("\n");
-    print_centered_kr("체력이 높을수록  ->  학점 낮음", W, 32);
-    print_centered_kr("체력이 낮을수록  ->  학점 높음", W, 32);
+    print_centered_kr("체력이 높을수록  ->  학점 낮음", W, 30);
+    print_centered_kr("체력이 낮을수록  ->  학점 높음", W, 30);
     printf("\n");
     printf(YELLOW);
-    print_centered_kr("[ 조작법 ]", W, 11);
+    print_centered_kr("[ 조작법 ]", W, 10);
     printf(RESET);
     printf("\n");
-    print_centered_kr("방향키   :  선택지 이동", W, 25);
-    print_centered_kr("엔터     :  확인 / 진행", W, 25);
+    print_centered_kr("방향키   :  선택지 이동", W, 23);
+    print_centered_kr("엔터     :  확인 / 진행", W, 23);
     printf("\n");
     printf(CYAN);
     print_centered("================================", W);
@@ -1537,26 +1565,26 @@ void show_team_info() {
     for (int i = 0; i < top; i++) printf("\n");
     printf(CYAN);
     print_centered("================================", W);
-    print_centered_kr("         [ 팀 소개 ]           ", W, 32);
+    print_centered_kr("         [ 팀 소개 ]           ", W, 31);
     print_centered("================================", W);
     printf(RESET);
     printf("\n");
-    print_centered_kr("팀명   :  미정", W, 15);
+    print_centered_kr("팀명   :  미정", W, 14);
     printf("\n");
     printf(YELLOW);
-    print_centered_kr("[ 팀원 ]", W, 9);
+    print_centered_kr("[ 팀원 ]", W, 8);
     printf(RESET);
     printf("\n");
-    print_centered_kr("기획 / 스토리   :  김바다", W, 26);
-    print_centered_kr("프론트 / UI     :  강민", W, 25);
-    print_centered_kr("백엔드 / 시스템 :  김언국", W, 26);
+    print_centered_kr("기획 / 스토리   :  김바다", W, 25);
+    print_centered_kr("프론트 / UI     :  강민", W, 23);
+    print_centered_kr("백엔드 / 시스템 :  김언국", W, 25);
     printf("\n");
     printf(CYAN);
     print_centered("================================", W);
     printf(RESET);
     printf("\n");
-    print_centered_kr("제작  :  2026", W, 14);
-    print_centered_kr("버전  :  ver 1.0", W, 17);
+    print_centered_kr("제작  :  2026", W, 13);
+    print_centered_kr("버전  :  ver 1.0", W, 16);
     printf("\n");
     printf(CYAN);
     print_centered("================================", W);
@@ -1600,7 +1628,7 @@ int main() {
                 int H = get_terminal_height();
                 for (int i = 0; i < H / 2; i++) printf("\n");
                 printf(RED);
-                print_centered_kr("게임을 종료합니다...", W, 22);
+                print_centered_kr("게임을 종료합니다...", W, 20);
                 printf(RESET);
                 printf("\n");
                 break;
