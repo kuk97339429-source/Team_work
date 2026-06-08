@@ -625,7 +625,7 @@ void player_setup() {
     printf("\n");
 
     print_centered_kr("학교에서 당신을 기록합니다.", W, 28);
-    print_centered_kr("이름과 학번 8자리를 공백으로 구분해 입력하세요.", W, 48);
+    print_centered_kr("이름과 학번(8~10자리)을 공백으로 구분해 입력하세요.", W, 52);
     printf("\n");
     printf(GRAY);
     print_centered_kr("(예: 김바다 20241947  또는  Kim 20241947)", W, 42);
@@ -638,45 +638,39 @@ void player_setup() {
     for (int i = 0; i < pad; i++) printf(" ");
     printf(CYAN "이름 학번 >> " RESET);
 
-    // 학번이 정확히 8자리가 될 때까지 재입력 받기 (최대 10회 시도)
+    // 학번이 8~10자리 숫자가 될 때까지 재입력 (최대 10회 시도)
     int attempts = 0;
     while (attempts < 10) {
-        int scanf_result = scanf("%31s %8s", player_name, player_id);
+        // %10s로 최대 10자리까지 받기 (8자리 이상 입력 시 박스 깨짐 방지)
+        int scanf_result = scanf("%31s %10s", player_name, player_id);
+
+        // 입력 버퍼에 남은 문자 모두 비우기 (잔여 데이터 방지)
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
 
         // EOF나 입력 실패 시 기본값 사용하고 탈출
-        if (scanf_result == EOF) {
+        if (scanf_result == EOF || c == EOF) {
             strcpy(player_name, "익명");
             strcpy(player_id, "00000000");
             break;
         }
 
         if (scanf_result == 2) {
-            // 학번이 8자리이고 모두 숫자인지 확인
+            // 학번이 8~10자리이고 모두 숫자인지 확인
             int id_len = 0;
             int is_valid = 1;
             while (player_id[id_len]) {
                 if (player_id[id_len] < '0' || player_id[id_len] > '9') is_valid = 0;
                 id_len++;
             }
-            while (getchar() != '\n');  // 버퍼 비우기
 
-            if (id_len == 8 && is_valid) break;  // 유효한 입력
-        }
-        else {
-            // 입력 버퍼 비우기 (EOF 아닌 경우)
-            int c;
-            while ((c = getchar()) != '\n' && c != EOF);
-            if (c == EOF) {
-                strcpy(player_name, "익명");
-                strcpy(player_id, "00000000");
-                break;
-            }
+            if (id_len >= 8 && id_len <= 10 && is_valid) break;  // 유효한 입력
         }
 
         attempts++;
-        // 잘못된 입력
+        // 잘못된 입력 안내
         for (int i = 0; i < pad; i++) printf(" ");
-        printf(RED "다시 입력 >> " RESET);
+        printf(RED "학번은 8~10자리 숫자로 다시 입력 >> " RESET);
     }
 
     // 시도 초과 시 기본값
@@ -736,7 +730,7 @@ void stage1() {
         "",
         GRAY "* (술을 제량껏 마셔야겠다...)" RESET
     };
-    int intro_widths[] = { 18, 42, 0, 26, 0, 28 };
+    int intro_widths[] = { 26, 44, 0, 29, 0, 29 };
 
     show_text_box_instant(intro_lines, intro_widths, 6, W);
     printf("\n");
