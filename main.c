@@ -1306,7 +1306,7 @@ void stage3() {
         "_getch는 즉시 입력",
         "둘 다 동일하다"
     };
-    int q3_choice_widths[] = { 15, 17, 17, 13 };
+    int q3_choice_widths[] = { 17, 18, 18, 14 };
     if (ask_question("[ 문제 3 / 3 - 입력 함수 ]", q3_lines, q3_widths, 1,
         q3_choices, q3_choice_widths, 2)) {
         correct_count++;
@@ -1503,8 +1503,6 @@ void show_title(int selected) {
     printf(GRAY);
     print_centered("================================================================", W);
     printf(RESET);
-    printf("\n");
-    print_centered_kr("체력이 높으면 졸업  /  낮으면 대원가        ver 1.0", W, 51);
     printf("\n\n");
     printf(GREEN);
     print_centered_kr("[ 화살표 위/아래 = 이동    엔터 = 선택 ]", W, 40);
@@ -1534,7 +1532,7 @@ void show_play_info() {
     printf(RESET);
     printf("\n");
     print_centered_kr("장르   : 텍스트 기반 턴제 게임", W, 30);
-    print_centered_kr("목표   : 교수님과의 싸움에서 살아남기", W, 37);
+    print_centered_kr("목표   : 강의 시간 속 문제에서 살아남기", W, 37);
     printf("\n");
     printf(YELLOW);
     print_centered_kr("[ 핵심 규칙 ]", W, 13);
