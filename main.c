@@ -871,7 +871,7 @@ void stage1() {
         got_jokbo = 1;
         break;
     case 3:
-        result_msg = YELLOW "* 도망가려다 잡혀버렸다. 술자리가 끝장났다..." RESET;
+        result_msg = YELLOW "* 도망가려다 잡혀버렸다. 술자리를 끝까지 벗어나지 못했다..." RESET;
         result_msg_w = 45;
         hp_change = -50; score_change = 0;
         break;
@@ -959,7 +959,7 @@ void stage2() {
     printf("\n");
 
     const char* intro_lines[] = {
-        "* 수업 시작 5분... 졸음이 쏟아지는 그 순간,",
+        "* 수업 도중... 졸음이 쏟아지는 그 순간,",
         "* 교수님의 눈빛이 당신을 향한다.",
         "",
         YELLOW "* 교수: \"거기 학생, 앞에 나와서 발표해봐요.\"" RESET,
